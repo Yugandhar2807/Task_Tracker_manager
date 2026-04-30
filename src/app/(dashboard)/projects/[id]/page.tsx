@@ -233,6 +233,70 @@ export default function ProjectDetailPage() {
         </CardContent>
       </Card>
 
+      {(() => {
+        // Per-member contribution breakdown for THIS project.
+        const everyone = [
+          { id: project.owner.id, name: project.owner.name, avatarUrl: project.owner.avatarUrl, isOwner: true },
+          ...project.members.map((m) => ({ id: m.id, name: m.name, avatarUrl: m.avatarUrl, isOwner: false })),
+        ];
+        const now = Date.now();
+        const breakdowns = everyone.map((p) => {
+          const tasks = project.tasks.filter((t) => t.assigneeId === p.id);
+          const done = tasks.filter((t) => t.status === "DONE").length;
+          const overdue = tasks.filter(
+            (t) => t.status !== "DONE" && t.dueDate && new Date(t.dueDate).getTime() < now,
+          ).length;
+          const completionRate = tasks.length === 0 ? 0 : Math.round((done / tasks.length) * 100);
+          return { ...p, total: tasks.length, done, overdue, completionRate };
+        });
+        const unassigned = project.tasks.filter((t) => !t.assigneeId).length;
+        const anyAssigned = breakdowns.some((b) => b.total > 0);
+        if (!anyAssigned && unassigned === 0) return null;
+        return (
+          <Card className="glass">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">Workload by member</CardTitle>
+              </div>
+              <CardDescription>How tasks in this project are distributed across the team.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {breakdowns
+                .filter((b) => b.total > 0)
+                .map((b) => (
+                  <div key={b.id} className="rounded-md border bg-card/40 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <UserAvatar name={b.name} src={b.avatarUrl} className="h-7 w-7" />
+                        <span className="text-sm font-medium truncate">{b.name}</span>
+                        {b.isOwner && <Badge className="text-[10px]">Owner</Badge>}
+                      </div>
+                      <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                        {b.done}/{b.total} · {b.completionRate}%
+                      </span>
+                    </div>
+                    <Progress value={b.completionRate} className="h-1.5" />
+                    {b.overdue > 0 && (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                        {b.overdue} overdue
+                      </p>
+                    )}
+                  </div>
+                ))}
+              {unassigned > 0 && (
+                <div className="rounded-md border border-dashed bg-card/30 p-3 sm:col-span-2">
+                  <p className="text-sm">
+                    <span className="font-medium">{unassigned} task{unassigned === 1 ? "" : "s"}</span>{" "}
+                    <span className="text-muted-foreground">unassigned in this project.</span>
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>

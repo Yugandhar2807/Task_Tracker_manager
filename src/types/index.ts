@@ -10,6 +10,14 @@ export type SafeUser = {
   avatarUrl?: string | null;
   createdAt?: string;
   _count?: { assignedTasks: number };
+  stats?: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    overdue: number;
+    completionRate: number;
+  };
 };
 
 export type ProjectListItem = {
