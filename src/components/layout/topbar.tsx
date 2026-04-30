@@ -26,7 +26,7 @@ const TITLES: Record<string, string> = {
 };
 
 export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { user, logout } = useSession();
   const title =
     TITLES[pathname] ??

@@ -9,7 +9,7 @@ import { ChatbotLauncher } from "@/components/chatbot/chatbot-launcher";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   return (
     <div className="relative min-h-screen">

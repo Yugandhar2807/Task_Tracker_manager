@@ -40,7 +40,8 @@ const STATUS_TABS: { value: TaskStatus | "ALL"; label: string }[] = [
 ];
 
 export default function ProjectDetailPage() {
-  const params = useParams<{ id: string }>();
+  const rawParams = useParams<{ id: string }>();
+  const projectId = rawParams?.id ?? "";
   const router = useRouter();
   const { user } = useSession();
   const isAdmin = user?.role === "ADMIN";
@@ -52,14 +53,14 @@ export default function ProjectDetailPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const r = await api.get<{ project: ProjectDetail }>(`/api/projects/${params.id}`);
+      const r = await api.get<{ project: ProjectDetail }>(`/api/projects/${projectId}`);
       setProject(r.project);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Failed to load project");
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [projectId]);
 
   React.useEffect(() => {
     load();

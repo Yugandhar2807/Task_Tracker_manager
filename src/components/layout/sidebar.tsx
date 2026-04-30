@@ -37,7 +37,7 @@ export function Sidebar({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { user } = useSession();
   const isAdmin = user?.role === "ADMIN";
 
