@@ -10,7 +10,7 @@ A production-ready, full-stack team collaboration platform built with Next.js 14
 
 | | |
 | --- | --- |
-| **Live App** | _Replace with your Railway URL — e.g._ `https://task-tracker-manager-production.up.railway.app` |
+| **Live App** | https://tasktrackermanager-production.up.railway.app/ |
 | **Source** | https://github.com/Yugandhar2807/Task_Tracker_manager |
 | **Hosting** | Railway (Nixpacks builder) + Railway Postgres |
 
