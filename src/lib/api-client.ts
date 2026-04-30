@@ -18,10 +18,11 @@ async function request<T = unknown>(url: string, opts: FetchOpts = {}): Promise<
     try { data = JSON.parse(text); } catch { data = text; }
   }
   if (!res.ok) {
-    const message =
-      (data && typeof data === "object" && "error" in (data as Record<string, unknown>) &&
-        ((data as Record<string, unknown>).error as string)) ||
-      `Request failed (${res.status})`;
+    let message = `Request failed (${res.status})`;
+    if (data && typeof data === "object" && "error" in data) {
+      const err = (data as Record<string, unknown>).error;
+      if (typeof err === "string" && err.length > 0) message = err;
+    }
     throw new ApiError(message, res.status, data);
   }
   return data as T;
