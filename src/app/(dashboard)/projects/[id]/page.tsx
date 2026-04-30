@@ -3,12 +3,13 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -88,6 +89,19 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function removeMember(memberId: string, memberName: string) {
+    if (!project) return;
+    if (!confirm(`Remove ${memberName} from "${project.name}"?`)) return;
+    try {
+      const remaining = project.members.filter((m) => m.id !== memberId).map((m) => m.id);
+      await api.put(`/api/projects/${project.id}`, { memberIds: remaining });
+      toast.success(`${memberName} removed`);
+      load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to remove member");
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -140,8 +154,10 @@ export default function ProjectDetailPage() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground leading-tight">Members</div>
-                  <div className="text-sm leading-tight">{project.members.length + 1}</div>
+                  <div className="text-xs text-muted-foreground leading-tight">Team</div>
+                  <div className="text-sm leading-tight">
+                    1 owner + {project.members.length} member{project.members.length === 1 ? "" : "s"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -160,6 +176,60 @@ export default function ProjectDetailPage() {
             </span>
           </div>
           <Progress value={project.progress} />
+        </CardContent>
+      </Card>
+
+      <Card className="glass">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <CardTitle className="text-base">Team</CardTitle>
+          </div>
+          <CardDescription>
+            Everyone with access to this project. {isAdmin ? "Click ✕ to remove a member." : ""}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-2 sm:grid-cols-2">
+          <div className="flex items-center justify-between rounded-md border bg-card/40 p-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <UserAvatar name={project.owner.name} src={project.owner.avatarUrl} />
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate">{project.owner.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{project.owner.email}</div>
+              </div>
+            </div>
+            <Badge>Owner</Badge>
+          </div>
+          {project.members.map((m) => (
+            <div key={m.id} className="flex items-center justify-between rounded-md border bg-card/40 p-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <UserAvatar name={m.name} src={m.avatarUrl} />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{m.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{m.email}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="secondary">Member</Badge>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeMember(m.id, m.name)}
+                    aria-label={`Remove ${m.name}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+          {project.members.length === 0 && (
+            <p className="col-span-2 py-4 text-center text-sm text-muted-foreground">
+              No members yet. {isAdmin ? "Edit the project to add some." : ""}
+            </p>
+          )}
         </CardContent>
       </Card>
 
