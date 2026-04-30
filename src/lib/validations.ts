@@ -24,7 +24,9 @@ export const projectCreateSchema = z.object({
 });
 export type ProjectCreateInput = z.infer<typeof projectCreateSchema>;
 
-export const projectUpdateSchema = projectCreateSchema.partial();
+export const projectUpdateSchema = projectCreateSchema.partial().extend({
+  archived: z.boolean().optional(),
+});
 
 // Accept either a date-only string ("YYYY-MM-DD") from <input type="date"> or a full ISO datetime.
 // `undefined` stays `undefined` (field omitted from update), an empty string or null becomes `null` (clear it).

@@ -58,6 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       data: {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
+        ...(data.archived !== undefined && { archived: data.archived }),
         ...(data.memberIds !== undefined && {
           members: { set: data.memberIds.map((id) => ({ id })) },
         }),
@@ -68,9 +69,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       },
     });
 
+    const verb =
+      data.archived === true ? "archived"
+      : data.archived === false ? "restored"
+      : "updated";
     await logActivity({
-      action: "PROJECT_UPDATED",
-      message: `${admin.name} updated project "${project.name}"`,
+      action: data.archived === true ? "PROJECT_ARCHIVED" : data.archived === false ? "PROJECT_RESTORED" : "PROJECT_UPDATED",
+      message: `${admin.name} ${verb} project "${project.name}"`,
       userId: admin.sub,
       projectId: project.id,
     });

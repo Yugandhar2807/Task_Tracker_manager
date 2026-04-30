@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { useSession } from "@/components/providers/app-providers";
 import { getInitials } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <NotificationBell />
           <ThemeToggle />
           {user && (
             <DropdownMenu>

@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { FolderKanban, Search } from "lucide-react";
+import { Archive, FolderKanban, Search } from "lucide-react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +12,7 @@ import { ProjectCard } from "@/components/projects/project-card";
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
 import { useSession } from "@/components/providers/app-providers";
 import { api, ApiError } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import type { ProjectListItem } from "@/types";
 
 export default function ProjectsPage() {
@@ -19,16 +21,18 @@ export default function ProjectsPage() {
   const [projects, setProjects] = React.useState<ProjectListItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [query, setQuery] = React.useState("");
+  const [showArchived, setShowArchived] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const r = await api.get<{ projects: ProjectListItem[] }>("/api/projects");
+      const url = showArchived ? "/api/projects?archived=true" : "/api/projects";
+      const r = await api.get<{ projects: ProjectListItem[] }>(url);
       setProjects(r.projects);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showArchived]);
 
   React.useEffect(() => {
     load();
@@ -70,7 +74,16 @@ export default function ProjectsPage() {
               className="pl-9 sm:w-64"
             />
           </div>
-          {isAdmin && <CreateProjectDialog onCreated={load} />}
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            size="default"
+            onClick={() => setShowArchived((v) => !v)}
+            className={cn("gap-2", showArchived && "bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300")}
+          >
+            <Archive className="h-4 w-4" />
+            {showArchived ? "Showing archived" : "Show archived"}
+          </Button>
+          {isAdmin && !showArchived && <CreateProjectDialog onCreated={load} />}
         </div>
       </div>
 

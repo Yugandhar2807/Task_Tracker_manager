@@ -4,6 +4,7 @@ import { HttpError, requireAdmin, requireUser } from "@/lib/auth";
 import { taskCreateSchema } from "@/lib/validations";
 import { apiError } from "@/lib/api-error";
 import { logActivity } from "@/lib/activity";
+import { notify } from "@/lib/notification";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,17 @@ export async function POST(req: NextRequest) {
       projectId: project.id,
       metadata: { taskId: task.id },
     });
+
+    // Notify the assignee — Step 6 from the scenario
+    if (task.assigneeId && task.assigneeId !== admin.sub) {
+      await notify({
+        userId: task.assigneeId,
+        type: "TASK_ASSIGNED",
+        message: `${admin.name} assigned you "${task.title}" in ${project.name}`,
+        taskId: task.id,
+        projectId: project.id,
+      });
+    }
 
     return NextResponse.json({ task }, { status: 201 });
   } catch (e) {

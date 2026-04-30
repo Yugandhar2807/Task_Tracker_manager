@@ -4,6 +4,7 @@ import { HttpError, requireAdmin, requireUser } from "@/lib/auth";
 import { taskUpdateSchema } from "@/lib/validations";
 import { apiError } from "@/lib/api-error";
 import { logActivity } from "@/lib/activity";
+import { notify } from "@/lib/notification";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +97,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         projectId: task.project.id,
         metadata: { taskId: task.id, from: existing.status, to: data.status },
       });
+      // Notify task creator (admin who assigned) when assignee moves the status
+      if (existing.createdById !== user.sub) {
+        await notify({
+          userId: existing.createdById,
+          type: "TASK_STATUS_CHANGED",
+          message: `${user.name} moved "${task.title}" → ${data.status.replace("_", " ")}`,
+          taskId: task.id,
+          projectId: task.project.id,
+        });
+      }
     } else {
       await logActivity({
         action: "TASK_UPDATED",
@@ -103,6 +114,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         userId: user.sub,
         projectId: task.project.id,
         metadata: { taskId: task.id },
+      });
+    }
+
+    // If assignee changed, notify the new assignee
+    if (
+      data.assigneeId !== undefined &&
+      data.assigneeId !== existing.assigneeId &&
+      data.assigneeId &&
+      data.assigneeId !== user.sub
+    ) {
+      await notify({
+        userId: data.assigneeId,
+        type: "TASK_REASSIGNED",
+        message: `${user.name} assigned you "${task.title}"`,
+        taskId: task.id,
+        projectId: task.project.id,
       });
     }
 

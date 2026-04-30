@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Users, X } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -24,6 +24,7 @@ type ProjectDetail = {
   id: string;
   name: string;
   description: string | null;
+  archived: boolean;
   ownerId: string;
   owner: { id: string; name: string; email: string; avatarUrl: string | null };
   members: { id: string; name: string; email: string; avatarUrl: string | null; role: string }[];
@@ -89,6 +90,20 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function toggleArchive() {
+    if (!project) return;
+    const next = !project.archived;
+    const verb = next ? "Archive" : "Restore";
+    if (!confirm(`${verb} project "${project.name}"?`)) return;
+    try {
+      await api.put(`/api/projects/${project.id}`, { archived: next });
+      toast.success(next ? "Project archived" : "Project restored");
+      load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Failed to update");
+    }
+  }
+
   async function removeMember(memberId: string, memberName: string) {
     if (!project) return;
     if (!confirm(`Remove ${memberName} from "${project.name}"?`)) return;
@@ -134,6 +149,13 @@ export default function ProjectDetailPage() {
         </Button>
       </div>
 
+      {project.archived && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+          <Archive className="h-4 w-4" />
+          This project is archived. {isAdmin ? "Click Restore to bring it back to active projects." : "Read-only."}
+        </div>
+      )}
+
       <Card className="glass">
         <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
           <div className="flex-1 min-w-0">
@@ -163,9 +185,18 @@ export default function ProjectDetailPage() {
             </div>
           </div>
           {isAdmin && (
-            <Button variant="outline" size="sm" onClick={deleteProject} className="text-destructive">
-              <Trash2 className="h-4 w-4" /> Delete
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={toggleArchive}>
+                {project.archived ? (
+                  <><ArchiveRestore className="h-4 w-4" /> Restore</>
+                ) : (
+                  <><Archive className="h-4 w-4" /> Archive</>
+                )}
+              </Button>
+              <Button variant="outline" size="sm" onClick={deleteProject} className="text-destructive">
+                <Trash2 className="h-4 w-4" /> Delete
+              </Button>
+            </div>
           )}
         </CardHeader>
         <CardContent>

@@ -43,6 +43,7 @@ model User {
   createdTasks    Task[]      @relation("CreatedTasks")
   activities      Activity[]
   comments        Comment[]
+  notifications   Notification[]
 
   @@index([email])
 }
@@ -51,6 +52,7 @@ model Project {
   id          String   @id @default(cuid())
   name        String
   description String?
+  archived    Boolean  @default(false)
   ownerId     String
   owner       User     @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members     User[]   @relation("ProjectMembers")
@@ -82,6 +84,23 @@ model Task {
   @@index([projectId])
   @@index([assigneeId])
   @@index([status])
+}
+
+// In-app notification. Created by API routes when a relevant event happens
+// for a specific user (task assigned, status changed by someone else, etc).
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // TASK_ASSIGNED | TASK_STATUS_CHANGED | PROJECT_ASSIGNED | TASK_COMMENT | TASK_DUE_SOON
+  message   String
+  taskId    String?  // optional reference for deep-linking
+  projectId String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model Comment {
