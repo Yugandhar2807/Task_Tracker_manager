@@ -11,6 +11,11 @@ RUN npm ci
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# Dummy DATABASE_URL for the build stage — Prisma's schema parser and Next.js'
+# page-collection both require it to be a parseable URL, but no actual connection
+# is made at build time. The real DATABASE_URL comes from Railway at runtime.
+ENV DATABASE_URL="postgresql://build:build@build:5432/build?schema=public"
+ENV JWT_SECRET="build-time-placeholder-overwritten-at-runtime"
 RUN npx prisma generate
 RUN npm run build
 
