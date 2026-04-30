@@ -29,7 +29,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
-  const redirect = search.get("redirect") || "/dashboard";
+  const redirect = search?.get("redirect") || "/dashboard";
 
   const {
     register,
