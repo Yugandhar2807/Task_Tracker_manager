@@ -6,6 +6,44 @@ A production-ready, full-stack team collaboration platform built with Next.js 14
 
 ---
 
+## 🌐 Live Deployment
+
+| | |
+| --- | --- |
+| **Live App** | _Replace with your Railway URL — e.g._ `https://task-tracker-manager-production.up.railway.app` |
+| **Source** | https://github.com/Yugandhar2807/Task_Tracker_manager |
+| **Hosting** | Railway (Nixpacks builder) + Railway Postgres |
+
+**First user to sign up automatically becomes the ADMIN.** Subsequent sign-ups default to `MEMBER`. Admins can promote/demote members from the **Members** page.
+
+---
+
+## ✅ Assignment Requirements — Coverage
+
+| Requirement | Status | Where it lives |
+| --- | --- | --- |
+| **Authentication** (Signup / Login) | ✅ | `src/app/api/auth/*`, `src/app/(auth)/*` |
+| **Project & team management** | ✅ | `src/app/api/projects/*`, `src/app/(dashboard)/projects/*` |
+| **Task creation, assignment & status tracking** | ✅ | `src/app/api/tasks/*`, `src/app/(dashboard)/tasks/*` |
+| **Dashboard** (tasks, status, overdue) | ✅ | `src/app/(dashboard)/dashboard/page.tsx` |
+| **REST APIs** | ✅ | 16 routes under `src/app/api/*` |
+| **Database** (SQL) | ✅ | PostgreSQL via Prisma — schema in `prisma/schema.prisma` |
+| **Validations & relationships** | ✅ | Zod (`src/lib/validations.ts`) + Prisma 1:M, M:M, cascading FKs |
+| **Role-based access control** | ✅ | `requireUser` / `requireAdmin` middleware in `src/lib/auth.ts`, enforced on every mutating endpoint |
+| **Deployed on Railway** | ✅ | `railway.json` + Railway Postgres plugin — fully live and functional |
+
+### Bonus features added beyond the spec
+
+- 🌓 Dark / light theme toggle (`next-themes`)
+- ✨ Framer Motion page transitions + task animations
+- 💬 **Status-change-with-note dialog** — members log work when transitioning task status
+- 🤖 **Built-in rule-based chatbot assistant** — bottom-right launcher; members ask "show my tasks" / "what's overdue", admins ask "tell me about \<member name\>" / "team summary". RBAC enforced server-side.
+- 🪟 Glassmorphism sidebar (blur + transparency)
+- 📊 Persistent activity feed with `TASK_STATUS_CHANGED`, `PROJECT_CREATED`, `TASK_COMMENT_ADDED`, etc.
+- 🔥 Priority + overdue badges, loading skeletons everywhere
+
+---
+
 ## Features
 
 ### Core
@@ -124,8 +162,8 @@ A production-ready, full-stack team collaboration platform built with Next.js 14
 
 ### 2. Install
 ```bash
-git clone <your-repo-url>
-cd Task_Tracker_Manager
+git clone https://github.com/Yugandhar2807/Task_Tracker_manager.git
+cd Task_Tracker_manager
 npm install
 ```
 
@@ -200,29 +238,35 @@ All routes return JSON. Protected routes require either the `ttm_token` HTTP-onl
 
 ## Deploying to Railway
 
-Railway auto-detects this project as Next.js and uses Nixpacks (already configured in `railway.json`). A `Dockerfile` is also included if you prefer container builds.
+This project is configured for Railway's **Nixpacks** builder via `railway.json`. The `Dockerfile.example` is kept for reference if you'd rather self-host with Docker.
 
-### Quick deploy
-1. **Push to GitHub.**
-2. On Railway → **New Project → Deploy from GitHub repo**.
-3. Add the **PostgreSQL** plugin from the Railway dashboard. Railway will inject `DATABASE_URL` into your service automatically.
-4. In your service → **Variables**, add:
-   - `JWT_SECRET` — paste the output of `openssl rand -base64 48`
-   - `JWT_EXPIRES_IN` — `7d` (optional, defaults to 7 days)
-   - `NEXT_PUBLIC_APP_URL` — your Railway domain (optional)
-5. Trigger a deploy. The build command:
-   ```
-   npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
-   ```
-   …runs migrations against the live DB, generates the Prisma client, and builds Next.js.
-6. Your `/api/health` endpoint is wired as the Railway health check.
+### One-time setup
+1. **Push the repo to GitHub.**
+2. On Railway → **New Project → Deploy from GitHub repo**, pick the repo.
+3. In the project, click **+ New → Database → Add PostgreSQL**.
+4. Click your **app service** → **Variables** tab → add:
+   - **`DATABASE_URL`** — click **+ New Reference** → pick your Postgres service → select `DATABASE_URL`. (Railway resolves it as `${{Postgres.DATABASE_URL}}`.)
+   - **`JWT_SECRET`** — any 40+ random characters. Generate one with `openssl rand -base64 48`.
+   - *(Optional)* `JWT_EXPIRES_IN` (default `7d`), `NEXT_PUBLIC_APP_URL` (your Railway domain once issued).
+5. **Do NOT set `NODE_ENV` manually** — Railway injects `NODE_ENV=production` automatically. Setting it to anything else makes Next.js use the dev React build and breaks the production prerender.
+6. The build will run automatically. The `/api/health` endpoint is wired as the Railway healthcheck (120s timeout).
 
-### Switching to Docker on Railway
-In the service settings, change the builder from **Nixpacks** to **Dockerfile**. The included `Dockerfile` is a multi-stage build that produces a standalone Next.js server (`output: "standalone"`).
+### What runs at deploy
+- **Build**: `NODE_ENV=production npm run build` → `prisma generate && next build`
+- **Start**: `NODE_ENV=production npm run start` → `prisma db push --accept-data-loss --skip-generate && next start -H 0.0.0.0 -p $PORT`
 
-### Post-deploy
-- Visit `https://<your-app>.up.railway.app/signup` and create the **first user** — it auto-promotes to ADMIN.
-- Or run the seed once: `railway run npm run db:seed`.
+`prisma db push` applies the schema in `prisma/schema.prisma` directly to the live Postgres on every deploy. (For a more change-controlled workflow, switch to `prisma migrate deploy` once you commit a `prisma/migrations/` folder.)
+
+### After the build goes green
+1. Click your service → **Settings → Networking → Generate Domain** to get a public URL.
+2. Update `NEXT_PUBLIC_APP_URL` to that URL.
+3. Visit `https://<your-app>.up.railway.app/signup` → create the first user → **automatically promoted to ADMIN**.
+
+### Resetting the database (e.g. to start fresh)
+From your local terminal, with the **public** Postgres URL from Railway:
+```bash
+DATABASE_URL="postgresql://...public-url..." npx prisma db push --force-reset --accept-data-loss
+```
 
 ---
 
