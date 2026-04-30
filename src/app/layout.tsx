@@ -6,6 +6,11 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
+// This is a CRUD/auth app — every page needs the request (cookies, session,
+// DB queries). Forcing dynamic at the root layout skips static prerender
+// and avoids next-themes/sonner React-context nulls during `next build`.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Team Task Manager — Modern Project & Task Collaboration",
   description:
